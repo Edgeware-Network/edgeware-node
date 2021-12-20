@@ -411,6 +411,16 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
+	pub ProofLimit: u32 = 1024;
+}
+
+impl pallet_atomic_swap::Config for Runtime {
+	type Event = Event;
+	type SwapAction = pallet_atomic_swap::BalanceSwapAction<Self::AccountId, Balances>;
+	type ProofLimit = ProofLimit;
+}
+
+parameter_types! {
 	pub const TransactionByteFee: Balance = 10 * MILLICENTS;
 	pub BlockGasLimit: U256
 		= U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
@@ -1274,6 +1284,7 @@ construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>} = 27,
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 28,
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 29,
+		AtomicSwap: pallet_atomic_swap::{Pallet, Call, Storage, Event<T>} = 32,
 		TreasuryReward: treasury_reward::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
 		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, Origin} = 33,
 		EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 34,

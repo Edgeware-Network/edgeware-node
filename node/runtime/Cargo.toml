@@ -53,6 +53,7 @@ edgeware-rpc-primitives-txpool = { path = "../../primitives/rpc/txpool", default
 
 # pallet dependencies
 pallet-assets = { git = "https://github.com/edgeware-network/substrate", branch = "erup-5", default-features = false }
+pallet-atomic-swap = { git = "https://github.com/edgeware-network/substrate", branch = "erup-5", default-features = false }
 pallet-authority-discovery = { git = "https://github.com/edgeware-network/substrate", branch = "erup-5", default-features = false }
 pallet-authorship = { git = "https://github.com/edgeware-network/substrate", branch = "erup-5", default-features = false }
 pallet-aura = { git = "https://github.com/edgeware-network/substrate", branch = "erup-5", default-features = false }
@@ -133,6 +134,7 @@ std = [
 	"scale-info/std",
 	"sp-authority-discovery/std",
 	"pallet-assets/std",
+	"pallet-atomic-swap/std",
 	"pallet-authority-discovery/std",
 	"pallet-authorship/std",
 	"sp-consensus-aura/std",
