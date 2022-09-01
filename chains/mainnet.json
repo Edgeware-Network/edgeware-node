@@ -15,7 +15,13 @@
     "/ip4/209.250.227.147/tcp/30333/p2p/12D3KooWEKSrN4VC8EtxHeV1coP2Z5gqzS4TKmGBmVy4ZauiGGZp",
     "/ip4/202.182.103.213/tcp/30333/p2p/12D3KooWHj8WXkLDvj65imtWCprzVzmoiJGFCMQFWhdKYLAe5b94",
     "/ip4/207.148.77.158/tcp/30333/p2p/12D3KooWSSwdKHsSK7rAN9kUxNcb1o3GGMuctc6XuujNqfuNZ4aZ",
-    "/ip4/140.82.54.194/tcp/30333/p2p/12D3KooWBWhttfyo5w1Q8hJQD7sx7MT8qmH3PqFjfmhrXMGgpUWA"
+    "/ip4/140.82.54.194/tcp/30333/p2p/12D3KooWBWhttfyo5w1Q8hJQD7sx7MT8qmH3PqFjfmhrXMGgpUWA",
+    "/dns/edgeware-boot1.jelliedowl.net/tcp/30333/p2p/12D3KooWDnHdG7qY7GsWC4wcu7cPkPohLmKHHmkDhpf2wZ17pvYX",
+    "/dns/edgeware-boot2.jelliedowl.net/tcp/30333/p2p/12D3KooWHnUcvchV57qV3GPCvRbe1o88b4rNuGjAbTp6ED1AeK5i",
+    "/dns/edgeware-boot3.jelliedowl.net/tcp/30333/p2p/12D3KooWStJ9nrbLKphY38jADQmhAKmq5ahso98jeHJrv91Jf3E5",
+    "/dns/edgeware-boot4.jelliedowl.net/tcp/30333/p2p/12D3KooWJH7xpMFWxcwKNGeoZmE1E73BeZkKXGqgaXo3EEEuT4og",
+    "/dns/edgeware-boot5.jelliedowl.net/tcp/30333/p2p/12D3KooWBG3CEAD3HpY34rBcFj6PDqZmWUeDL1r6rnE8bTXLgtc8",
+    "/dns/edgeware-boot6.jelliedowl.net/tcp/30333/p2p/12D3KooWFJ5TdZMkQfKJn3MMjxDwHaQuQxg4Xtv52eCpirZYpt3r"
   ],
   "telemetryEndpoints": [
     [
