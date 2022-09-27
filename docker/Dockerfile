@@ -8,9 +8,9 @@ WORKDIR /edgeware
 COPY . /edgeware/
 #RUN  fallocate -l 1G /swapfile
 RUN rustup uninstall nightly
-RUN rustup install nightly-2021-05-31
+RUN rustup install nightly-2022-06-02
 RUN rustup update nightly
-RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2021-05-31
+RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2022-06-02
 
 
 RUN cargo build --$PROFILE -j 1
