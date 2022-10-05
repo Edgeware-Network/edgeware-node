@@ -71,7 +71,7 @@ To start up the Edgeware node and connect to the Mainnet, run:
 
 To start up the Edgeware node and connect to the Beresheet testnet, run:
 ```
-./target/release/edgeware --chain=beresheet --name <INSERT_NAME>
+./target/release/edgeware --chain=beresheet-v46 --name <INSERT_NAME>
 ```
 
 ### Docker
