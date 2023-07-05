@@ -15,14 +15,14 @@ serde = { version = "1.0", default-features = false, optional = true }
 codec = { package = "parity-scale-codec", version = "3.1.2", default-features = false, features = ["derive"] }
 num_enum = { version = "0.5.1", default-features = false }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
-sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-0.9.43", default-features = false }
+sp-application-crypto = { git = "https://github.com/paritytech/substrate", branch = "polkadot-0.9.43", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-0.9.43", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-0.9.43", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-0.9.43", default-features = false }
 
 [dev-dependencies]
-#sp-serializer = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19" }
+#sp-serializer = { git = "https://github.com/paritytech/substrate", branch = "polkadot-0.9.43" }
 #pretty_assertions = "0.6.1"
 
 [features]
