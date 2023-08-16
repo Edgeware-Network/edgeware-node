@@ -100,7 +100,6 @@ pub struct Cli {
 	#[allow(missing_docs)]
 	#[clap(flatten)]
 	pub run: RunCmd,
-	
 
 	/// Disable automatic hardware benchmarks.
 	///
@@ -120,12 +119,13 @@ pub struct Cli {
 /// Possible subcommands of the main binary.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
+
 	/// The custom inspect subcommmand for decoding blocks and extrinsics.
-	#[command(
-		name = "inspect",
-		about = "Decode given block or extrinsic using current native runtime."
-	)]
-	Inspect(node_inspect::cli::InspectCmd),
+		#[command(
+			name = "inspect",
+			about = "Decode given block or extrinsic using current native runtime."
+		)]
+		Inspect(node_inspect::cli::InspectCmd),
 	/// Key management cli utilities
 	#[clap(subcommand)]
 	Key(KeySubcommand),
@@ -135,13 +135,14 @@ pub enum Subcommand {
 	#[clap(subcommand)]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
+
 	/// Try some command against runtime state.
 	#[cfg(feature = "try-runtime")]
-	  TryRuntime(try_runtime_cli::TryRuntimeCmd),
-	
+	TryRuntime(try_runtime_cli::TryRuntimeCmd),
+
 	/// Try some command against runtime state. Note: `try-runtime` feature must be enabled.
 	#[cfg(not(feature = "try-runtime"))]
-	 TryRuntime,
+	TryRuntime,
 
 	/// Verify a signature for a message, provided on STDIN, with a given
 	/// (public or secret) key.
@@ -174,7 +175,6 @@ pub enum Subcommand {
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
 
-	
 	/// Db meta columns information.
 	ChainInfo(sc_cli::ChainInfoCmd),
 }

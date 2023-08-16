@@ -77,7 +77,7 @@ pub async fn seal_block<B, BI, SC, C, E, TP, CIDP, P>(
 		create_inherent_data_providers,
 		consensus_data_provider: digest_provider,
 		mut sender,
-	}: SealBlockParams<'_, B, BI, SC, C, E, TP, CIDP, P>,
+	}: SealBlockParams<'_, B, BI, SC, C, E, TP, CIDP,P>,
 ) where
 	B: BlockT,
 	BI: BlockImport<B, Error = sp_consensus::Error, Transaction = sp_api::TransactionFor<C, B>>

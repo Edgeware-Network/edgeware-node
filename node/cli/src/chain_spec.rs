@@ -73,7 +73,7 @@ pub struct Extensions {
 	pub fork_blocks: sc_client_api::ForkBlocks<Block>,
 	/// Known bad block hashes.
 	pub bad_blocks: sc_client_api::BadBlocks<Block>,
-	
+
 	/// The light sync state extension used by the sync-state rpc.
 	pub light_sync_state: sc_sync_state_rpc::LightSyncStateExtension,
 }
@@ -81,10 +81,9 @@ pub struct Extensions {
 /// Specialized `ChainSpec`.
 pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 /// Flaming Fir testnet generator
-pub fn flaming_fir_config() -> Result<ChainSpec, String>{
-	ChainSpec::from_json_bytes()//pending
-}
-
+    pub fn flaming_fir_config() -> Result<ChainSpec, String>{
+		ChainSpec::from_json_bytes()//pending
+	}
 /// Mainnet configuration
 pub fn edgeware_mainnet_official() -> ChainSpec {
 	match ChainSpec::from_json_bytes(&include_bytes!("../res/mainnet.chainspec.raw.json")[..]) {

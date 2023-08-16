@@ -75,7 +75,7 @@ pub enum Error {
 	SendError(#[from] SendError),
 	/// Some other error.
 	#[error("Other error: {0}")]
-	Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+	Other(Box<dyn std::error::Error + Send + Sync>),
 }
 
 impl From<ImportResult> for Error {
