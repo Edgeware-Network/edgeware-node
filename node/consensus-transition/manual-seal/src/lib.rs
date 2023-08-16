@@ -103,7 +103,8 @@ pub struct ManualSealParams<B: BlockT, BI, E, C: ProvideRuntimeApi<B>, TP, SC, C
 
 	/// Digest provider for inclusion in blocks.
 	pub consensus_data_provider:
-		Option<Box<dyn ConsensusDataProvider<B, Proof=P, Transaction = TransactionFor<C, B>>>>,
+
+	Option<Box<dyn ConsensusDataProvider<B,  Proof = P, Transaction = TransactionFor<C, B>>>>,
 
 	/// Something that can create the inherent data providers.
 	pub create_inherent_data_providers: CIDP,
@@ -128,9 +129,10 @@ pub struct InstantSealParams<B: BlockT, BI, E, C: ProvideRuntimeApi<B>, TP, SC, 
 
 	/// Digest provider for inclusion in blocks.
 	pub consensus_data_provider:
-		Option<Box<dyn ConsensusDataProvider<B,Proof=P, Transaction = TransactionFor<C, B>>>>,
 
-	/// Something that can create the inherent data providers.
+		Option<Box<dyn ConsensusDataProvider<B, Proof = P, Transaction = TransactionFor<C, B>>>>,
+
+ /// Something that can create the inherent data providers.
 	pub create_inherent_data_providers: CIDP,
 }
 

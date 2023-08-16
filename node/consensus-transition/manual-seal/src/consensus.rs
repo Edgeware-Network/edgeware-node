@@ -33,7 +33,7 @@ pub trait ConsensusDataProvider<B: BlockT>: Send + Sync {
 	/// Block import transaction type
 	type Transaction;
 
-	/// The proof type.
+  /// The proof type.
 	type Proof;
 
 	/// Attempt to create a consensus digest.

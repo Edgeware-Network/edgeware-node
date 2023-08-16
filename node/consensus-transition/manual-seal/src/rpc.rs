@@ -35,6 +35,9 @@ use sp_runtime::EncodedJustification;
 
 /// Future's type for jsonrpc
 //type FutureResult<T> = jsonrpc_core::BoxFuture<Result<T, Error>>;
+
+
+
 /// sender passed to the authorship task to report errors or successes.
 pub type Sender<T> = Option<oneshot::Sender<std::result::Result<T, crate::Error>>>;
 
