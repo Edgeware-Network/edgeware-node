@@ -309,6 +309,8 @@ pub struct NewFullBase {
 	pub client: Arc<FullClient>,
 	/// The networking service of the node.
 	pub network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	/// The syncing service of the node.
+	pub sync: Arc<SyncingService<Block>>,
 	/// The transaction pool of the node.
 	pub transaction_pool: Arc<TransactionPool>,
 	/// The rpc handlers of the node.

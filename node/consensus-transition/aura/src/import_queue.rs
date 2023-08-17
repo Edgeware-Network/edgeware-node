@@ -19,7 +19,7 @@
 //! Module implementing the logic for verifying and importing AuRa blocks.
 
 use crate::{
-	aura_err, authorities, find_pre_digest, slot_author, AuthorityId, CompatibilityMode, Error,
+	aura_err, authorities, standalone::SealVerificationError, find_pre_digest, slot_author, AuthorityId, CompatibilityMode, Error,
 };
 use parity_scale_codec::{Codec, Decode, Encode};
 use log::{debug, info, trace};
@@ -145,6 +145,7 @@ where
 	async fn check_inherents<B: BlockT>(
 		&self,
 		block: B,
+		//at_hash: B::Hash,   --Raj
 		block_id: BlockId<B>,
 		inherent_data: sp_inherents::InherentData,
 		create_inherent_data_providers: CIDP::InherentDataProviders,
@@ -201,6 +202,19 @@ where
 		&mut self,
 		mut block: BlockImportParams<B, ()>,
 	) -> Result<(BlockImportParams<B, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
+
+		// Skip checks that include execution, if being told so or when importing only state.
+		//
+		// This is done for example when gap syncing and it is expected that the block after the gap
+		// was checked/chosen properly, e.g. by warp syncing to this block using a finality proof.
+		// Or when we are importing state only and can not verify the seal.
+		if block.with_state() || block.state_action.skip_execution_checks() {
+			// When we are importing only the state of a block, it will be the best block.
+			block.fork_choice = Some(ForkChoiceStrategy::Custom(block.with_state()));
+
+			return Ok(block)
+		}
+
 		let hash = block.header.hash();
 		let parent_hash = *block.header.parent_hash();
 		let authorities = authorities(
@@ -219,6 +233,7 @@ where
 
 		let mut inherent_data = create_inherent_data_providers
 			.create_inherent_data()
+			.await
 			.map_err(Error::<B>::Inherent)?;
 
 		let slot_now = create_inherent_data_providers.slot();
@@ -250,14 +265,14 @@ where
 						.client
 						.runtime_api()
 						.has_api_with::<dyn BlockBuilderApi<B>, _>(
-							&BlockId::Hash(parent_hash),
+							parent_hash,
 							|v| v >= 2,
 						)
 						.map_err(|e| e.to_string())?
 					{
 						self.check_inherents(
 							new_block.clone(),
-							BlockId::Hash(parent_hash),
+							parent_hash,
 							inherent_data,
 							create_inherent_data_providers,
 							block.origin.into(),
@@ -283,7 +298,7 @@ where
 				block.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 				block.post_hash = Some(hash);
 
-				Ok((block, None))
+				Ok(block)
 			},
 			CheckedHeader::Deferred(a, b) => {
 				debug!(target: "aura", "Checking {:?} failed; {:?}, {:?}.", hash, a, b);

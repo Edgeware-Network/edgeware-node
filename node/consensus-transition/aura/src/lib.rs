@@ -251,9 +251,13 @@ where
 }
 
 /// Parameters of [`build_aura_worker`].
-pub struct BuildAuraWorkerParams<C, I, PF, SO, L, BS, N> {
+pub struct BuildAuraWorkerParams<C, SC, I, PF, SO, L, CIDP, BS, N> {
+	/// The duration of a slot.
+	pub slot_duration: SlotDuration,
 	/// The client to interact with the chain.
 	pub client: Arc<C>,
+	/// A select chain implementation to select the best block.
+	pub select_chain: SC,
 	/// The block import.
 	pub block_import: I,
 	/// The proposer factory to build proposer instances.
@@ -262,6 +266,8 @@ pub struct BuildAuraWorkerParams<C, I, PF, SO, L, BS, N> {
 	pub sync_oracle: SO,
 	/// Hook into the sync module to control the justification sync process.
 	pub justification_sync_link: L,
+	/// Something that can create the inherent data providers.
+	pub create_inherent_data_providers: CIDP,
 	/// Should we force the authoring of blocks?
 	pub force_authoring: bool,
 	/// The backoff strategy when we miss slots.
@@ -303,7 +309,14 @@ pub fn build_aura_worker<P, B, C, PF, I, SO, L, BS, Error>(
 		force_authoring,
 		compatibility_mode,
 	}: BuildAuraWorkerParams<C, I, PF, SO, L, BS, NumberFor<B>>,
-) -> impl sc_consensus_slots::SlotWorker<B, <PF::Proposer as Proposer<B>>::Proof>
+) -> impl sc_consensus_slots::SlotWorker<B, 	
+        Proposer = PF::Proposer,
+        BlockImport = I,
+        SyncOracle = SO,
+        JustificationSyncLink = L,
+        Claim = P::Public,
+        AuxData = Vec<AuthorityId<P>>,
+		>
 
 where
 	B: BlockT,
@@ -315,7 +328,7 @@ where
 	P::Public: AppPublic + Hash + Member + Encode + Decode,
 	P::Signature: TryFrom<Vec<u8>> + Hash + Member + Encode + Decode,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync + 'static,
-	Error: std::error::Error + Send + From<sp_consensus::Error> + 'static,
+	Error: std::error::Error + Send + From<ConsensusError> + 'static,
 	SO: SyncOracle + Send + Sync + Clone,
 	L: sc_consensus::JustificationSyncLink<B>,
 	BS: BackoffAuthoringBlocksStrategy<NumberFor<B>> + Send + Sync + 'static,

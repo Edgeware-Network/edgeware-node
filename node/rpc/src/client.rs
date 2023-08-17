@@ -33,6 +33,9 @@ pub trait RuntimeApiCollection:
 	+ fp_rpc::EthereumRuntimeRPCApi<Block>
 	+ edgeware_rpc_primitives_debug::DebugRuntimeApi<Block>
 	+ edgeware_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
+	+ nimbus_primitives::NimbusApi<Block>
+	+ cumulus_primitives_core::CollectCollationInfo<Block>
+	+ session_keys_primitives::VrfApi<Block>
 where
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
@@ -52,6 +55,9 @@ where
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ edgeware_rpc_primitives_debug::DebugRuntimeApi<Block>
 		+ edgeware_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
+		+ nimbus_primitives::NimbusApi<Block>
+		+ cumulus_primitives_core::CollectCollationInfo<Block>
+		+ session_keys_primitives::VrfApi<Block>,
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }

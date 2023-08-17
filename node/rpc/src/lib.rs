@@ -51,10 +51,12 @@ use sc_client_api::{
 	client::BlockchainEvents,
 	BlockOf,
 };
+use sc_consensus_babe::BabeWorkerHandle;
 use sc_consensus_manual_seal::rpc::{ManualSeal, ManualSealApi};
 use sc_network::NetworkService;
 use sc_transaction_pool::{ChainApi, Pool};
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
+use sp_keystore::KeystorePtr;
 // Frontier
 use fc_rpc::{
 	EthBlockDataCacheTask, EthTask, OverrideHandle, RuntimeApiStorageOverride, 
@@ -72,6 +74,15 @@ pub mod client;
 /// Tracing module
 pub mod tracing;
 use client::RuntimeApiCollection;
+
+
+/// Extra dependencies for BABE.
+pub struct BabeDeps {
+	/// A handle to the BABE worker for issuing requests.
+	pub babe_worker_handle: BabeWorkerHandle<Block>,
+	/// The keystore that manages the keys of the node.
+	pub keystore: KeystorePtr,
+}
 
 /// Extra dependencies for GRANDPA
 pub struct GrandpaDeps<B> {
