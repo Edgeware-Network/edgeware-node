@@ -88,64 +88,52 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
-		}
+		},
 		Some(Subcommand::CheckBlock(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					import_queue,
-					..
-				} = new_partial(&config, &cli)?;
+				let PartialComponents { client, task_manager, import_queue, .. } =
+					new_partial(&config, &cli)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
-		}
+		},
 		Some(Subcommand::ExportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents {
-					client, task_manager, ..
-				} = new_partial(&config, &cli)?;
+				let PartialComponents { client, task_manager, .. } = new_partial(&config, &cli)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
-		}
+		},
 		Some(Subcommand::ExportState(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents {
-					client, task_manager, ..
-				} = new_partial(&config, &cli)?;
+				let PartialComponents { client, task_manager, .. } = new_partial(&config,  &cli)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
-		}
+		},
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					import_queue,
-					..
-				} = new_partial(&config, &cli)?;
+				let PartialComponents { client, task_manager, import_queue, .. } =
+					new_partial(&config, &cli)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
-		}
+		},
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| cmd.run(config.database))
-		}
+		},
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, backend, .. } = new_partial(&config,&cli)?;
-				let aux_revert = Box::new(move |client,_, blocks| {
+				let PartialComponents { client, task_manager, backend, .. } = new_partial(&config,  &cli)?;
+				let aux_revert = Box::new(|client,_, blocks| {
 					sc_finality_grandpa::revert(client, blocks)?;
 					Ok(())
 				});
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
 			})
-		}
+		},
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
 
@@ -159,7 +147,6 @@ pub fn run() -> Result<()> {
 				fee_history_limit: cli.run.fee_history_limit,
 				max_past_logs: cli.run.max_past_logs,
 				relay_chain_rpc_url: None,
-				tracing_raw_max_memory_usage: cli.run.tracing_raw_max_memory_usage
 			};
 
 			runner.run_node_until_exit(|config| async move {

@@ -35,6 +35,8 @@ pub mod chain_spec;
 #[macro_use]
 mod service;
 #[cfg(feature = "cli")]
+mod benchmarking;
+#[cfg(feature = "cli")]
 mod cli;
 #[cfg(feature = "cli")]
 mod command;
@@ -43,9 +45,9 @@ mod command;
 pub use cli::*;
 #[cfg(feature = "cli")]
 pub use command::*;
+		
+pub use cli::*;	
+pub use command::*;	
 
-pub use cli::*;
-pub use command::*;
-
-pub mod mainnet_fixtures;
+pub mod mainnet_fixtures;	
 pub mod testnet_fixtures;
