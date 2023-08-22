@@ -1,6 +1,6 @@
 // This file is part of Substrate.
 
-// Copyright (C) 2018-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 
 // This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,9 @@
 //! Module implementing the logic for verifying and importing AuRa blocks.
 
 use crate::{
-	aura_err, authorities, standalone::SealVerificationError, find_pre_digest, slot_author, AuthorityId, CompatibilityMode, Error,
+	aura_err, authorities, find_pre_digest, slot_author, AuthorityId, CompatibilityMode, Error,
 };
-use parity_scale_codec::{Codec, Decode, Encode};
+use codec::{Codec, Decode, Encode};
 use log::{debug, info, trace};
 use prometheus_endpoint::Registry;
 use sc_client_api::{backend::AuxStore, BlockOf, UsageProvider};
@@ -54,7 +54,7 @@ use std::{fmt::Debug, hash::Hash, marker::PhantomData, sync::Arc};
 fn check_header<C, B: BlockT, P: Pair>(
 	client: &C,
 	slot_now: Slot,
-	mut header: B::Header,
+	header: B::Header,
 	hash: B::Hash,
 	authorities: &[AuthorityId<P>],
 	check_for_equivocation: CheckForEquivocation,
@@ -145,7 +145,6 @@ where
 	async fn check_inherents<B: BlockT>(
 		&self,
 		block: B,
-		//at_hash: B::Hash,   --Raj
 		block_id: BlockId<B>,
 		inherent_data: sp_inherents::InherentData,
 		create_inherent_data_providers: CIDP::InherentDataProviders,
@@ -202,7 +201,6 @@ where
 		&mut self,
 		mut block: BlockImportParams<B, ()>,
 	) -> Result<(BlockImportParams<B, ()>, Option<Vec<(CacheKeyId, Vec<u8>)>>), String> {
-
 		// Skip checks that include execution, if being told so or when importing only state.
 		//
 		// This is done for example when gap syncing and it is expected that the block after the gap
@@ -265,14 +263,14 @@ where
 						.client
 						.runtime_api()
 						.has_api_with::<dyn BlockBuilderApi<B>, _>(
-							parent_hash,
+							&BlockId::Hash(parent_hash),
 							|v| v >= 2,
 						)
 						.map_err(|e| e.to_string())?
 					{
 						self.check_inherents(
 							new_block.clone(),
-							parent_hash,
+							BlockId::Hash(parent_hash),
 							inherent_data,
 							create_inherent_data_providers,
 							block.origin.into(),
@@ -298,7 +296,7 @@ where
 				block.fork_choice = Some(ForkChoiceStrategy::LongestChain);
 				block.post_hash = Some(hash);
 
-				Ok(block)
+				Ok((block, None))
 			},
 			CheckedHeader::Deferred(a, b) => {
 				debug!(target: "aura", "Checking {:?} failed; {:?}, {:?}.", hash, a, b);
