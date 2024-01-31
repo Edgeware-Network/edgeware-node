@@ -15,9 +15,8 @@
 // along with Edgeware.  If not, see <http://www.gnu.org/licenses/>.
 
 use crate::{chain_spec, service, service::new_partial, Cli, Subcommand};
-use edgeware_executor::Executor;
-use edgeware_runtime::Block;
-use sc_cli::{ChainSpec, Result, Role, RuntimeVersion, SubstrateCli};
+use edgeware_cli_opt::RpcConfig;
+use sc_cli::{ChainSpec, Result, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
@@ -26,7 +25,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn impl_version() -> String {
-		env!("SUBSTRATE_CLI_IMPL_VERSION").into()
+		"4.0.2".into()
 	}
 
 	fn description() -> String {
@@ -38,7 +37,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn support_url() -> String {
-		"https://github.com/hicommonwealth/edgeware-node/issues/new".into()
+		"https://github.com/edgeware-network/edgeware-node/issues/new".into()
 	}
 
 	fn copyright_start_year() -> i32 {
@@ -55,10 +54,12 @@ impl SubstrateCli for Cli {
 			"multi-dev" | "multi" => Box::new(chain_spec::multi_development_config()),
 			"local" => Box::new(chain_spec::local_testnet_config()),
 			"testnet-conf" => Box::new(chain_spec::edgeware_testnet_config(
-				"Beresheet v3".to_string(),
-				"beresheet_v3_edgeware_testnet".to_string(),
+				"Beresheet".to_string(),
+				"beresheet_edgeware_testnet".to_string(),
 			)),
 			"mainnet-conf" => Box::new(chain_spec::edgeware_mainnet_config()),
+			"beresheet-v46-fast" => Box::new(chain_spec::edgeware_beresheet_v46_fast()),
+			"beresheet-v46" => Box::new(chain_spec::edgeware_beresheet_v46()),
 			"beresheet" => Box::new(chain_spec::edgeware_beresheet_official()),
 			"edgeware" => Box::new(chain_spec::edgeware_mainnet_official()),
 			path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
@@ -75,16 +76,10 @@ pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
 	match &cli.subcommand {
-		Some(Subcommand::Benchmark(cmd)) => {
-			if cfg!(feature = "runtime-benchmarks") {
-				let runner = cli.create_runner(cmd)?;
-
-				runner.sync_run(|config| cmd.run::<Block, Executor>(config))
-			} else {
-				Err("Benchmarking wasn't enabled when building the node. \
-				You can enable it with `--features runtime-benchmarks`."
-					.into())
-			}
+		Some(Subcommand::Benchmark(_cmd)) => {
+			Err("Benchmarking wasn't enabled when building the node. \
+			You can enable it with `--features runtime-benchmarks`."
+				.into())
 		}
 		Some(Subcommand::Key(cmd)) => cmd.run(&cli),
 		Some(Subcommand::Sign(cmd)) => cmd.run(),
@@ -143,21 +138,32 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents {
-					client,
-					task_manager,
-					backend,
-					..
-				} = new_partial(&config, &cli)?;
-				Ok((cmd.run(client, backend), task_manager))
+				let PartialComponents { client, task_manager, backend, .. } = new_partial(&config,&cli)?;
+				let aux_revert = Box::new(move |client,_, blocks| {
+					sc_finality_grandpa::revert(client, blocks)?;
+					Ok(())
+				});
+				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
 			})
 		}
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
+
+			let rpc_config = RpcConfig {
+				ethapi: cli.run.ethapi.clone(),
+				ethapi_max_permits: cli.run.ethapi_max_permits,
+				ethapi_trace_max_count: cli.run.ethapi_trace_max_count,
+				ethapi_trace_cache_duration: cli.run.ethapi_trace_cache_duration,
+				eth_log_block_cache: cli.run.eth_log_block_cache,
+				eth_statuses_cache: cli.run.eth_statuses_cache,
+				fee_history_limit: cli.run.fee_history_limit,
+				max_past_logs: cli.run.max_past_logs,
+				relay_chain_rpc_url: None,
+			};
+
 			runner.run_node_until_exit(|config| async move {
 				match config.role {
-					Role::Light => service::new_light(config),
-					_ => service::new_full(config, &cli),
+					_ => service::new_full(config, &cli, rpc_config),
 				}
 				.map_err(sc_cli::Error::Service)
 			})

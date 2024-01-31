@@ -18,7 +18,7 @@
 
 /// Money matters.
 pub mod currency {
-	pub use edgeware_primitives::{Balance, Amount, CurrencyId};
+	pub use edgeware_primitives::{Amount, Balance};
 
 	pub const MILLICENTS: Balance = 10_000_000_000_000;
 	pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
@@ -55,6 +55,9 @@ pub mod time {
 
 	pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
 
+	#[cfg(feature = "fast-runtime")]
+	pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 1 * MINUTES;
+	#[cfg(not(feature = "fast-runtime"))]
 	pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 1 * HOURS;
 	pub const EPOCH_DURATION_IN_SLOTS: u64 = {
 		const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;

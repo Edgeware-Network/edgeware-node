@@ -1,6 +1,6 @@
 use super::*;
 use crate as treasury_reward;
-use frame_support::{construct_runtime, parameter_types, traits::GenesisBuild, weights::Weight, PalletId};
+use frame_support::{construct_runtime, parameter_types, traits::{ConstU32, GenesisBuild}, weights::Weight, PalletId};
 use frame_system::mocking::{MockBlock, MockUncheckedExtrinsic};
 use sp_runtime::{traits::One, Permill};
 
@@ -10,6 +10,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, Perbill,
 };
+use sp_std::convert::{TryFrom, TryInto};
 
 pub(crate) type Balance = u64;
 pub type Amount = i128;
@@ -27,10 +28,10 @@ construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
-		TreasuryReward: treasury_reward::{Pallet, Call, Storage, Config<T>, Event<T>},
+		System: frame_system,
+		Balances: pallet_balances,
+		Treasury: pallet_treasury,
+		TreasuryReward: treasury_reward,
 	}
 );
 
@@ -45,7 +46,7 @@ parameter_types! {
 impl frame_system::Config for Test {
 	type AccountData = pallet_balances::AccountData<u64>;
 	type AccountId = AccountId;
-	type BaseCallFilter = ();
+	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
@@ -66,11 +67,13 @@ impl frame_system::Config for Test {
 	type SS58Prefix = Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
+	type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
 	pub const ExistentialDeposit: Balance = 0;
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 	pub const MaxTreeDepth: u8 = 32;
 	pub const CacheBlockLength: u64 = 5;
 	// Minimum deposit length is 1 month w/ 6 second blocks
@@ -84,6 +87,8 @@ impl pallet_balances::Config for Test {
 	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = MaxLocks;
+	type MaxReserves = MaxReserves;
+	type ReserveIdentifier = ();
 	type WeightInfo = ();
 }
 
@@ -107,6 +112,7 @@ impl pallet_treasury::Config for Test {
 	type PalletId = TreasuryPalletId;
 	type ProposalBond = ProposalBond;
 	type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ();
 	type RejectOrigin = frame_system::EnsureRoot<AccountId>;
 	type SpendFunds = ();
 	type SpendPeriod = SpendPeriod;

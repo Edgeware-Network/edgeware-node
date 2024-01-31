@@ -7,7 +7,7 @@ services:
       - "0.0.0.0:9933:9933/tcp"
       - "0.0.0.0:9944:9944/tcp"
       - "0.0.0.0:30333:30333/tcp"
-    image: decentration/edgeware:v3.3.3
+    image: depthhoar/edgeware-node:v3.3.3
     command: bash -c "edgeware --dev --name myNode --wasm-execution Compiled --unsafe-ws-external --unsafe-rpc-external --rpc-cors=all --rpc-methods=Unsafe"
     volumes:
      - "edgeware-data:/data"

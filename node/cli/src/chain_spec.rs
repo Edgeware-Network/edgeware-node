@@ -28,15 +28,15 @@ use sc_telemetry::TelemetryEndpoints;
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_aura::ed25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public, H160, U256};
+use sp_core::{sr25519, Pair, Public, H160};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{
 	traits::{IdentifyAccount, One, Verify},
 	Perbill,
 };
-
 pub use edgeware_primitives::{AccountId, Balance, BlockNumber, Signature};
 pub use edgeware_runtime::{constants::time::*, GenesisConfig};
+use fp_evm::GenesisAccount;
 
 use hex::FromHex;
 use serde_json::Result;
@@ -80,7 +80,23 @@ pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 /// Mainnet configuration
 pub fn edgeware_mainnet_official() -> ChainSpec {
-	match ChainSpec::from_json_bytes(&include_bytes!("../res/mainnet.chainspec.json")[..]) {
+	match ChainSpec::from_json_bytes(&include_bytes!("../res/mainnet.chainspec.raw.json")[..]) {
+		Ok(spec) => spec,
+		Err(e) => panic!("{}", e),
+	}
+}
+
+/// Beresheet Testnet configuration for runtime spec 46 (fast node)
+pub fn edgeware_beresheet_v46_fast() -> ChainSpec {
+	match ChainSpec::from_json_bytes(&include_bytes!("../res/beresheet_v46_fast.raw.json")[..]) {
+		Ok(spec) => spec,
+		Err(e) => panic!("{}", e),
+	}
+}
+
+/// Beresheet Testnet configuration for runtime spec 46
+pub fn edgeware_beresheet_v46() -> ChainSpec {
+	match ChainSpec::from_json_bytes(&include_bytes!("../res/beresheet_v46.raw.json")[..]) {
 		Ok(spec) => spec,
 		Err(e) => panic!("{}", e),
 	}
@@ -88,7 +104,7 @@ pub fn edgeware_mainnet_official() -> ChainSpec {
 
 /// Beresheet Testnet configuration
 pub fn edgeware_beresheet_official() -> ChainSpec {
-	match ChainSpec::from_json_bytes(&include_bytes!("../res/beresheetv3.chainspec.json")[..]) {
+	match ChainSpec::from_json_bytes(&include_bytes!("../res/beresheet.chainspec.json")[..]) {
 		Ok(spec) => spec,
 		Err(e) => panic!("{}", e),
 	}
@@ -154,7 +170,7 @@ pub fn testnet_genesis(
 		ImOnlineId,
 		AuthorityDiscoveryId,
 	)>,
-	_root_key: AccountId,
+	root_key: AccountId,
 	endowed_accounts: Option<Vec<AccountId>>,
 	_enable_println: bool,
 	_balances: Vec<(AccountId, Balance)>,
@@ -164,16 +180,30 @@ pub fn testnet_genesis(
 ) -> GenesisConfig {
 	let alice_evm_account_id = H160::from_str("19e7e376e7c213b7e7e7e46cc70a5dd086daff2a").unwrap();
 	let mut evm_accounts = BTreeMap::new();
-
 	if create_evm_alice {
-		evm_accounts.insert(alice_evm_account_id, pallet_evm::GenesisAccount {
-			nonce: 0.into(),
-			balance: U256::from(123456_123_000_000_000_000_000u128),
-			storage: BTreeMap::new(),
-			code: vec![],
+		evm_accounts.insert(alice_evm_account_id, GenesisAccount {
+			balance: ethereum_types::U256::from(123456_123_000_000_000_000_000u128),
+			code: Default::default(),
+			nonce: Default::default(),
+			storage: Default::default(),
 		});
+		evm_accounts.insert(
+			// H160 address of Alice dev account
+			// Derived from SS58 (42 prefix) address
+			// SS58: 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
+			// hex: 0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d
+			// Using the full hex key, truncating to the first 20 bytes (the first 40 hex chars)
+			H160::from_str("d43593c715fdd31c61141abd04a99fd6822c8558")
+				.expect("internal H160 is valid; qed"),
+			GenesisAccount {
+				balance: ethereum_types::U256::from_str("0xffffffffffffffffffffffffffffffff")
+					.expect("internal U256 is valid; qed"),
+				code: Default::default(),
+				nonce: Default::default(),
+				storage: Default::default(),
+			},
+		);
 	}
-
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
 		vec![
 			get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -190,8 +220,9 @@ pub fn testnet_genesis(
 			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 		]
 	});
-
-	endowed_accounts.push(_root_key.clone());
+	if !endowed_accounts.contains(&root_key) {
+		endowed_accounts.push(root_key.clone());
+	}
 
 	initial_authorities.iter().for_each(|x| {
 		if !endowed_accounts.contains(&x.0) {
@@ -206,15 +237,15 @@ pub fn testnet_genesis(
 	let endowed_balances: Vec<(AccountId, Balance)> = endowed_accounts.iter().map(|k| (k.clone(), STASH)).collect();
 
 	GenesisConfig {
-		frame_system: SystemConfig {
+		system: SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
-			changes_trie_config: Default::default(),
+			// changes_trie_config: Default::default(),
 		},
-		pallet_balances: BalancesConfig {
+		balances: BalancesConfig {
 			balances: endowed_balances,
 		},
-		pallet_indices: IndicesConfig { indices: vec![] },
-		pallet_session: SessionConfig {
+		indices: IndicesConfig { indices: vec![] },
+		session: SessionConfig {
 			keys: initial_authorities
 				.iter()
 				.map(|x| {
@@ -226,7 +257,7 @@ pub fn testnet_genesis(
 				})
 				.collect::<Vec<_>>(),
 		},
-		pallet_staking: StakingConfig {
+		staking: StakingConfig {
 			validator_count: 7,
 			minimum_validator_count: initial_authorities.len() as u32,
 			stakers: initial_authorities
@@ -237,18 +268,22 @@ pub fn testnet_genesis(
 			slash_reward_fraction: Perbill::from_percent(10),
 			..Default::default()
 		},
-		pallet_democracy: DemocracyConfig::default(),
-		pallet_collective_Instance1: Default::default(),
-		pallet_aura: AuraConfig { authorities: vec![] },
-		pallet_im_online: ImOnlineConfig { keys: vec![] },
-		pallet_authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
-		pallet_grandpa: GrandpaConfig { authorities: vec![] },
-		pallet_treasury: Default::default(),
-		pallet_elections_phragmen: Default::default(),
-		pallet_sudo: SudoConfig { key: _root_key },
-		pallet_vesting: VestingConfig { vesting },
-		pallet_ethereum: Default::default(),
-		pallet_evm: EVMConfig { accounts: evm_accounts },
+		democracy: DemocracyConfig::default(),
+		council: Default::default(),
+		aura: AuraConfig { authorities: vec![] },
+		im_online: ImOnlineConfig { keys: vec![] },
+		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+		grandpa: GrandpaConfig { authorities: vec![] },
+		treasury: Default::default(),
+		phragmen_election: Default::default(),
+		sudo: SudoConfig { key: Some(root_key) },
+		vesting: VestingConfig { vesting },
+		assets: Default::default(),
+		transaction_payment: Default::default(),
+		dynamic_fee: Default::default(),
+		ethereum: Default::default(),
+		base_fee: Default::default(),
+		evm: EVMConfig { accounts: evm_accounts },
 		treasury_reward: TreasuryRewardConfig {
 			current_payout: 95 * DOLLARS,
 			minting_interval: One::one(),
@@ -294,8 +329,8 @@ pub fn edgeware_testnet_config(testnet_name: String, testnet_node_name: String) 
 	let boot_nodes = crate::testnet_fixtures::get_beresheet_bootnodes();
 
 	ChainSpec::from_genesis(
-		&testnet_name,
-		&testnet_node_name,
+		&testnet_name, //name
+		&testnet_node_name, // id
 		ChainType::Development,
 		edgeware_testnet_config_genesis,
 		boot_nodes,
@@ -304,6 +339,7 @@ pub fn edgeware_testnet_config(testnet_name: String, testnet_node_name: String) 
 				.expect("Staging telemetry url is valid; qed"),
 		),
 		Some(DEFAULT_PROTOCOL_ID),
+		Default::default(),
 		properties,
 		Default::default(),
 	)
@@ -362,6 +398,7 @@ pub fn development_config() -> ChainSpec {
 		vec![],
 		None,
 		None,
+		Default::default(),
 		properties,
 		Default::default(),
 	)
@@ -384,6 +421,7 @@ pub fn multi_development_config() -> ChainSpec {
 		vec![],
 		None,
 		None,
+		Default::default(),
 		properties,
 		Default::default(),
 	)
@@ -415,6 +453,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		vec![],
 		None,
 		None,
+		Default::default(),
 		None,
 		Default::default(),
 	)
@@ -436,19 +475,19 @@ pub fn mainnet_genesis(
 	vesting: Vec<(AccountId, BlockNumber, BlockNumber, Balance)>,
 ) -> GenesisConfig {
 	GenesisConfig {
-		frame_system: SystemConfig {
+		system: SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
-			changes_trie_config: Default::default(),
+			//changes_trie_config: Default::default(),
 		},
-		pallet_balances: BalancesConfig {
+		balances: BalancesConfig {
 			balances: founder_allocation
 				.iter()
 				.map(|x| (x.0.clone(), x.1.clone()))
 				.chain(balances.clone())
 				.collect(),
 		},
-		pallet_indices: IndicesConfig { indices: vec![] },
-		pallet_session: SessionConfig {
+		indices: IndicesConfig { indices: vec![] },
+		session: SessionConfig {
 			keys: initial_authorities
 				.iter()
 				.map(|x| {
@@ -460,7 +499,7 @@ pub fn mainnet_genesis(
 				})
 				.collect::<Vec<_>>(),
 		},
-		pallet_staking: StakingConfig {
+		staking: StakingConfig {
 			validator_count: 60,
 			minimum_validator_count: initial_authorities.len() as u32,
 			stakers: initial_authorities
@@ -471,23 +510,27 @@ pub fn mainnet_genesis(
 			slash_reward_fraction: Perbill::from_percent(10),
 			..Default::default()
 		},
-		pallet_democracy: DemocracyConfig::default(),
-		pallet_collective_Instance1: CouncilConfig {
+		democracy: DemocracyConfig::default(),
+		council: CouncilConfig {
 			members: crate::mainnet_fixtures::get_mainnet_election_members(),
 			phantom: Default::default(),
 		},
-		pallet_aura: AuraConfig { authorities: vec![] },
-		pallet_im_online: ImOnlineConfig { keys: vec![] },
-		pallet_authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
-		pallet_grandpa: GrandpaConfig { authorities: vec![] },
-		pallet_treasury: Default::default(),
-		pallet_elections_phragmen: Default::default(),
-		pallet_sudo: SudoConfig {
-			key: crate::mainnet_fixtures::get_mainnet_root_key(),
+		aura: AuraConfig { authorities: vec![] },
+		im_online: ImOnlineConfig { keys: vec![] },
+		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+		grandpa: GrandpaConfig { authorities: vec![] },
+		treasury: Default::default(),
+		phragmen_election: Default::default(),
+		sudo: SudoConfig {
+			key: Some(crate::mainnet_fixtures::get_mainnet_root_key()),
 		},
-		pallet_vesting: VestingConfig { vesting },
-		pallet_ethereum: Default::default(),
-		pallet_evm: Default::default(),
+		vesting: VestingConfig { vesting },
+		assets: Default::default(),
+		transaction_payment: Default::default(),
+		dynamic_fee: Default::default(),
+		ethereum: Default::default(),
+		base_fee: Default::default(),
+		evm: Default::default(),
 		treasury_reward: TreasuryRewardConfig {
 			current_payout: 95 * DOLLARS,
 			minting_interval: One::one(),
@@ -541,17 +584,18 @@ pub fn edgeware_mainnet_config() -> ChainSpec {
 	let properties = serde_json::from_str(data).unwrap();
 	let boot_nodes = crate::mainnet_fixtures::get_mainnet_bootnodes();
 	ChainSpec::from_genesis(
-		"Edgeware",
-		"edgeware",
-		ChainType::Live,
-		edgeware_mainnet_config_genesis,
-		boot_nodes,
+		"Edgeware",// name
+		"edgeware", // chain id
+		ChainType::Live, //chain type
+		edgeware_mainnet_config_genesis, //constructor
+		boot_nodes, //boot noodes Vec<MultiaddrWithPeerId>
 		Some(
 			TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
 				.expect("Staging telemetry url is valid; qed"),
-		),
-		Some(DEFAULT_PROTOCOL_ID),
-		properties,
-		Default::default(),
+		), // telemetry in Option
+		Some(DEFAULT_PROTOCOL_ID), //protocol_id
+		Default::default(), // fork_id
+		properties,//Properties
+		Default::default(), //extensions
 	)
 }

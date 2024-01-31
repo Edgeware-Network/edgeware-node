@@ -1,4 +1,4 @@
-// Copyright 2019-2021 PureStake Inc.
+// Copyright 2019-2022 PureStake Inc.
 // This file is part of Moonbeam.
 
 // Moonbeam is free software: you can redistribute it and/or modify
@@ -14,16 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 pub use edgeware_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Header, Index};
-use sp_runtime::{
-	traits::{BlakeTwo256},
-};
-
-
+use sp_runtime::traits::BlakeTwo256;
 
 /// A set of APIs that polkadot-like runtimes must implement.
 ///
-/// This trait has no methods or associated type. It is a concise marker for all
-/// the trait bounds that it contains.
+/// This trait has no methods or associated type. It is a concise marker for all the trait bounds
+/// that it contains.
 pub trait RuntimeApiCollection:
 	sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
 	+ sp_api::ApiExt<Block>
@@ -33,6 +29,7 @@ pub trait RuntimeApiCollection:
 	+ sp_api::Metadata<Block>
 	+ sp_offchain::OffchainWorkerApi<Block>
 	+ sp_session::SessionKeys<Block>
+	+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 	+ fp_rpc::EthereumRuntimeRPCApi<Block>
 	+ edgeware_rpc_primitives_debug::DebugRuntimeApi<Block>
 	+ edgeware_rpc_primitives_txpool::TxPoolRuntimeApi<Block>
@@ -51,6 +48,7 @@ where
 		+ sp_api::Metadata<Block>
 		+ sp_offchain::OffchainWorkerApi<Block>
 		+ sp_session::SessionKeys<Block>
+		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 		+ edgeware_rpc_primitives_debug::DebugRuntimeApi<Block>
 		+ edgeware_rpc_primitives_txpool::TxPoolRuntimeApi<Block>,
