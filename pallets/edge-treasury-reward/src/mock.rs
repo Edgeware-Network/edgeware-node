@@ -101,6 +101,37 @@ parameter_types! {
 	pub const MaxApprovals: u32 = 100;
 }
 
+pub struct TestSpendOrigin;
+impl frame_support::traits::EnsureOrigin<Origin> for TestSpendOrigin {
+    type Success = u64;
+    fn try_origin(o: Origin) -> Result<Self::Success, Origin> {
+        Result::<frame_system::RawOrigin<_>, Origin>::from(o).and_then(|o| match o {
+            frame_system::RawOrigin::Root => Ok(u64::max_value()),
+            frame_system::RawOrigin::Signed(account) => {
+                if account == AccountId32::from([10; 32]) {
+                    Ok(5)
+                } else if account == AccountId32::from([11; 32]) {
+                    Ok(10)
+                } else if account == AccountId32::from([12; 32]) {
+                    Ok(20)
+                }
+                else if account == AccountId32::from([13; 32]) {
+                    Ok(50)
+                }
+                else {
+                    Err(Origin::from(frame_system::RawOrigin::Signed(account)))
+                }
+            },
+            r => Err(Origin::from(r))
+        })
+    }
+
+    #[cfg(feature = "runtime-benchmarks")]
+    fn try_successful_origin() -> Result<Origin, ()> {
+        Ok(Origin::root())
+    }
+}
+
 impl pallet_treasury::Config for Test {
 	type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
 	type Burn = Burn;
@@ -117,6 +148,7 @@ impl pallet_treasury::Config for Test {
 	type SpendFunds = ();
 	type SpendPeriod = SpendPeriod;
 	type WeightInfo = ();
+	type SpendOrigin = TestSpendOrigin;
 }
 
 impl Config for Test {

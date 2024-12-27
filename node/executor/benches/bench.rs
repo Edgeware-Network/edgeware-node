@@ -16,14 +16,14 @@
 
 use codec::{Decode, Encode};
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
-use edgeware_executor::Executor;
+use edgeware_executor::EdgewareExecutor;
 use edgeware_primitives::{BlockNumber, Hash};
 use edgeware_runtime::{
 	constants::currency::*, Block, BuildStorage, Call, CheckedExtrinsic, GenesisConfig, Header, UncheckedExtrinsic,
 };
 use edgeware_testing::keyring::*;
 use frame_support::Hashable;
-use sc_executor::{Externalities, NativeExecutor, RuntimeInfo, WasmExecutionMethod};
+use sc_executor::{Externalities, NativeElseWasmExecutor, RuntimeInfo, WasmExecutionMethod};
 use sp_core::{
 	storage::well_known_keys,
 	traits::{CodeExecutor, RuntimeCode},
@@ -65,7 +65,7 @@ fn new_test_ext(genesis_config: &GenesisConfig) -> TestExternalities<BlakeTwo256
 }
 
 fn construct_block<E: Externalities>(
-	executor: &NativeExecutor<Executor>,
+	executor: &NativeElseWasmExecutor<EdgewareExecutor>,
 	ext: &mut E,
 	number: BlockNumber,
 	parent_hash: Hash,
@@ -135,7 +135,7 @@ fn construct_block<E: Externalities>(
 	(Block { header, extrinsics }.encode(), hash.into())
 }
 
-fn test_blocks(genesis_config: &GenesisConfig, executor: &NativeExecutor<Executor>) -> Vec<(Vec<u8>, Hash)> {
+fn test_blocks(genesis_config: &GenesisConfig, executor: &NativeElseWasmExecutor<EdgewareExecutor>) -> Vec<(Vec<u8>, Hash)> {
 	let mut test_ext = new_test_ext(genesis_config);
 	let mut block1_extrinsics = vec![CheckedExtrinsic {
 		signed: None,

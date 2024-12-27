@@ -48,7 +48,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(crate) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Treasury minting event
-		TreasuryMinting(T::Balance, T::BlockNumber, T::AccountId),
+		TreasuryMinting{amount: T::Balance, at_block: T::BlockNumber, to:T::AccountId},
 	}
 
 	/// The next tree identifier up for grabs
@@ -99,11 +99,11 @@ pub mod pallet {
 					return;
 				}
 				<T as Config>::Currency::deposit_creating(&<pallet_treasury::Pallet<T>>::account_id(), reward);
-				Self::deposit_event(Event::TreasuryMinting(
-					<pallet_balances::Pallet<T>>::free_balance(<pallet_treasury::Pallet<T>>::account_id()),
-					<frame_system::Pallet<T>>::block_number(),
-					<pallet_treasury::Pallet<T>>::account_id(),
-				));
+				Self::deposit_event(Event::TreasuryMinting{
+					amount: <pallet_balances::Pallet<T>>::free_balance(<pallet_treasury::Pallet<T>>::account_id()),
+					at_block: <frame_system::Pallet<T>>::block_number(),
+					to: <pallet_treasury::Pallet<T>>::account_id(),
+					});
 			}
 		}
 	}

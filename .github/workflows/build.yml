@@ -4,7 +4,7 @@ on: [push]
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout
@@ -27,7 +27,7 @@ jobs:
           target: wasm32-unknown-unknown
           toolchain: nightly
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: target/
           key: ${{ runner.os }}-rust-${{ hashFiles('**/Cargo.lock') }}
@@ -36,12 +36,12 @@ jobs:
 
       - name: Module tests
         run: ./scripts/test.sh
-      
+
       - name: Build binary
         run: cargo build --release
 
       - name: Save binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: edgeware
           path: target/release/edgeware

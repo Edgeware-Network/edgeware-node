@@ -72,6 +72,9 @@ pub struct RunCmd {
 	#[clap(long, default_value = "300000000")]
 	pub eth_statuses_cache: usize,
 
+	#[clap[long, default_value="20000000"]]
+	pub  tracing_raw_max_memory_usage: usize,
+
 	/// Maximum number of logs in a query.
 	#[clap(long, default_value = "10000")]
 	pub max_past_logs: u32,
@@ -79,6 +82,9 @@ pub struct RunCmd {
 	/// Maximum fee history cache size.
 	#[clap(long, default_value = "2048")]
 	pub fee_history_limit: u64,
+
+	#[clap(long)]
+	pub no_hardware_benchmarks: bool,
 }
 
 /// An overarching CLI command definition.
@@ -139,4 +145,7 @@ pub enum Subcommand {
 
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
+
+	/// Db meta columns information.
+	ChainInfo(sc_cli::ChainInfoCmd),
 }

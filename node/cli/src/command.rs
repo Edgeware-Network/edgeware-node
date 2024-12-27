@@ -146,6 +146,10 @@ pub fn run() -> Result<()> {
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
 			})
 		}
+		Some(Subcommand::ChainInfo(cmd)) => {
+			let runner = cli.create_runner(cmd)?;
+			Ok(runner.sync_run(|config| cmd.run::<edgeware_primitives::Block>(&config))?)
+		},
 		None => {
 			let runner = cli.create_runner(&cli.run.base)?;
 
@@ -159,11 +163,20 @@ pub fn run() -> Result<()> {
 				fee_history_limit: cli.run.fee_history_limit,
 				max_past_logs: cli.run.max_past_logs,
 				relay_chain_rpc_url: None,
+				tracing_raw_max_memory_usage: cli.run.tracing_raw_max_memory_usage,
 			};
 
 			runner.run_node_until_exit(|config| async move {
+			let hwbench = if cli.run.no_hardware_benchmarks{
+                config.database.path().map(|database_path|{
+                    let _ = std::fs::create_dir_all(&database_path);
+                    sc_sysinfo::gather_hwbench(Some(database_path))
+                })
+			}else{
+			None
+			};
 				match config.role {
-					_ => service::new_full(config, &cli, rpc_config),
+					_ => service::new_full(config, &cli, rpc_config, hwbench),
 				}
 				.map_err(sc_cli::Error::Service)
 			})

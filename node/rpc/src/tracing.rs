@@ -16,16 +16,15 @@
 
 use super::*;
 use sp_blockchain::{
-	Backend as BlockchainBackend, Error as BlockChainError, HeaderBackend, HeaderMetadata,
+Error as BlockChainError, HeaderBackend, HeaderMetadata,
 };
 
 use std::{sync::Arc, time::Duration};
-use crate::client::RuntimeApiCollection;
 use fp_rpc::EthereumRuntimeRPCApi;
 use sp_block_builder::BlockBuilder;
 use edgeware_cli_opt::EthApi as EthApiCmd;
 use sc_client_api::{
-	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	backend::{Backend, StateBackend, StorageProvider},
 	client::BlockchainEvents,
 	BlockOf,
 };
@@ -33,9 +32,8 @@ use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT};
 use sp_api::{HeaderT, ProvideRuntimeApi};
 
-use edgeware_primitives::Block;
-use edgeware_rpc_debug::{Debug, DebugHandler, DebugRequester, DebugServer};
-use edgeware_rpc_trace::{CacheRequester as TraceFilterCacheRequester, CacheTask, Trace, TraceServer};
+use edgeware_rpc_debug::{DebugHandler, DebugRequester};
+use edgeware_rpc_trace::{CacheRequester as TraceFilterCacheRequester, CacheTask};
 use tokio::sync::Semaphore;
 
 #[derive(Clone)]
@@ -45,35 +43,6 @@ pub struct RpcRequesters {
 	pub debug: Option<DebugRequester>,
 	/// Trace requester
 	pub trace: Option<TraceFilterCacheRequester>,
-}
-
-/// Adds tracing functionality.
-pub fn extend_with_tracing<C, BE>(
-	client: Arc<C>,
-	requesters: RpcRequesters,
-	trace_filter_max_count: u32,
-	io: &mut jsonrpc_core::IoHandler<sc_rpc::Metadata>,
-) where
-	BE: Backend<Block> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	BE::Blockchain: BlockchainBackend<Block>,
-	C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
-	C: BlockchainEvents<Block>,
-	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
-	C: Send + Sync + 'static,
-	C::Api: RuntimeApiCollection<StateBackend = BE::State>,
-{
-	if let Some(trace_filter_requester) = requesters.trace {
-		io.extend_with(TraceServer::to_delegate(Trace::new(
-			client,
-			trace_filter_requester,
-			trace_filter_max_count,
-		)));
-	}
-
-	if let Some(debug_requester) = requesters.debug {
-		io.extend_with(DebugServer::to_delegate(Debug::new(debug_requester)));
-	}
 }
 
 /// Spawn the tasks that are required to run a Moonbeam tracing node.
@@ -96,7 +65,7 @@ where
 {
 	let permit_pool = Arc::new(Semaphore::new(rpc_config.ethapi_max_permits as usize));
 
-	let (trace_filter_task, trace_filter_requester) = 
+	let (trace_filter_task, trace_filter_requester) =
 		if rpc_config.ethapi.contains(&EthApiCmd::Trace) {
 		let (trace_filter_task, trace_filter_requester) = CacheTask::create(
 			Arc::clone(&params.client),
@@ -117,6 +86,7 @@ where
 			Arc::clone(&params.frontier_backend),
 			Arc::clone(&permit_pool),
 			Arc::clone(&params.overrides),
+			rpc_config.tracing_raw_max_memory_usage,
 		);
 		(Some(debug_task), Some(debug_requester))
 	} else {

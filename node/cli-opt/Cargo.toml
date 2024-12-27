@@ -7,7 +7,7 @@ authors = ["Filip @ Edgeware"]
 edition = '2021'
 
 [dependencies]
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.25" }
 structopt = "0.3"#{ version = "0.3.8", features=["paw"]}
 tiny-bip39 = "0.8"
 libsecp256k1 = "0.7"

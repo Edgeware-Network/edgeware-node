@@ -14,4 +14,4 @@ edgeware-runtime = { version = "4.0.0", path = "../../../../node/runtime" }
 generate-bags = { version = "4.0.0-dev", path = "../" }
 
 # third-party
-clap = { version = "3.1.6", features = ["derive"] }
+clap = { version = "3.1.18", features = ["derive"] }

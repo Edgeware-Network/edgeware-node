@@ -34,7 +34,7 @@ use sc_network::{Event, NetworkService};
 use sc_service::{config::{Configuration, /*PrometheusConfig*/}, error::Error as ServiceError, RpcHandlers,BasePath, ChainSpec, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 //use sp_consensus::SlotData;
-use sp_core::U256;
+use sp_core::{traits::SpawnNamed, U256};
 use sp_runtime::traits::Block as BlockT;
 use std::{
 	collections::BTreeMap,
@@ -312,7 +312,8 @@ pub struct NewFullBase {
 /// Creates a full service from the configuration.
 pub fn new_full_base(mut config: Configuration,
 	cli: &Cli,
-	rpc_config: RpcConfig
+	rpc_config: RpcConfig,
+	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> Result<NewFullBase, ServiceError> {
 	let sc_service::PartialComponents {
 		client,
@@ -367,8 +368,6 @@ pub fn new_full_base(mut config: Configuration,
 	let name = config.network.node_name.clone();
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
-	let subscription_task_executor =
-		sc_rpc::SubscriptionTaskExecutor::new(task_manager.spawn_handle());
 	let fee_history_cache: fc_rpc_core::types::FeeHistoryCache = Arc::new(Mutex::new(BTreeMap::new()));
 	let fee_history_cache_limit = cli.run.fee_history_limit;
 	let overrides = edgeware_rpc::overrides_handle(client.clone());
@@ -445,7 +444,7 @@ pub fn new_full_base(mut config: Configuration,
 	let clt = client.clone();
 	let ntw = network.clone();
 	let svs = shared_voter_state.clone();
-	let rpc_extensions_builder = move |deny_unsafe, subscription_executor| {
+	let rpc_extensions_builder = move |deny_unsafe, subscription_executor: Arc<dyn SpawnNamed>| {
 		let deps = edgeware_rpc::FullDeps {
 			client: clt.clone(),
 			pool: pool.clone(),
@@ -456,7 +455,7 @@ pub fn new_full_base(mut config: Configuration,
 				shared_voter_state: svs.clone(),
 				shared_authority_set: shared_authority_set.clone(),
 				justification_stream: justification_stream.clone(),
-				subscription_executor,
+				subscription_executor: subscription_executor.clone(),
 				finality_provider: finality_proof_provider.clone(),
 			},
 			// Frontier
@@ -474,17 +473,22 @@ pub fn new_full_base(mut config: Configuration,
 			block_data_cache: block_data_cache.clone(),
 			command_sink: None,
 		};
-		#[allow(unused_mut)]
-		let mut io = edgeware_rpc::create_full(deps, subscription_task_executor.clone());
+
 		if ethapi_cmd.contains(&EthApiCmd::Debug) || ethapi_cmd.contains(&EthApiCmd::Trace) {
-			edgeware_rpc::tracing::extend_with_tracing(
-				clt.clone(),
-				tracing_requesters.clone(),
-				rpc_config.ethapi_trace_max_count,
-				&mut io,
-			);
+			edgeware_rpc::create_full(
+				deps,
+				subscription_executor,
+				Some(edgeware_rpc::TracingConfig {
+					tracing_requesters: tracing_requesters.clone(),
+					trace_filter_max_count: rpc_config.ethapi_trace_max_count,
+				}),
+			)
+			.map_err(Into::into)
 		}
-		Ok(io)
+		else{
+			edgeware_rpc::create_full(deps, subscription_executor, None).map_err(Into::into)
+		}
+
 	};
 
 	let rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
@@ -494,12 +498,19 @@ pub fn new_full_base(mut config: Configuration,
 		task_manager: &mut task_manager,
 		keystore: keystore,
 		transaction_pool: transaction_pool.clone(),
-		rpc_extensions_builder: Box::new(rpc_extensions_builder),
+		rpc_builder: Box::new(rpc_extensions_builder),
 		network: network.clone(),
 		system_rpc_tx: system_rpc_tx,
 		telemetry: telemetry.as_mut(),
 	})?;
 
+	if let Some(hwbench) = hwbench{
+      sc_sysinfo::print_hwbench(&hwbench);
+      if let Some(ref mut telemetry) = telemetry{
+       let telemetry_handle = telemetry.handle();
+       task_manager.spawn_handle().spawn("telemetry_hwbench", None, sc_sysinfo::initialize_hwbench_telemetry(telemetry_handle, hwbench));
+      }
+	}
 
 	let backoff_authoring_blocks: Option<()> = None;
 
@@ -582,6 +593,8 @@ pub fn new_full_base(mut config: Configuration,
 			sc_authority_discovery::new_worker_and_service_with_config(
 				sc_authority_discovery::WorkerConfig {
 					publish_non_global_ips: auth_disc_publish_non_global_ips,
+					// Require that authority discovery records are signed.
+					strict_record_validation: true,
 					..Default::default()
 				},
 				client.clone(),
@@ -647,6 +660,6 @@ pub fn new_full_base(mut config: Configuration,
 
 
 /// Builds a new service for a full client.
-pub fn new_full(config: Configuration, cli: &Cli, rpc_config: RpcConfig) -> Result<TaskManager, ServiceError> {
-	new_full_base(config, cli, rpc_config).map(|NewFullBase { task_manager, .. }| task_manager)
+pub fn new_full(config: Configuration, cli: &Cli, rpc_config: RpcConfig,hwbench: Option<sc_sysinfo::HwBench>) -> Result<TaskManager, ServiceError> {
+	new_full_base(config, cli, rpc_config, hwbench).map(|NewFullBase { task_manager, .. }| task_manager)
 }
